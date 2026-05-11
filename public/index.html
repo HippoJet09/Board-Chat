@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Game of Thrones Board Messenger</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+    body {
+        background-color: #0b0b0f;
+        color: #d6c7a1;
+        font-family: Georgia, serif;
+        margin: 0;
+        padding: 10px;
+    }
+
+    h1 {
+        font-size: 22px;
+        text-align: center;
+    }
+
+    button {
+        background-color: #2a1f1a;
+        color: #d6c7a1;
+        border: 1px solid #5a4632;
+        padding: 10px;
+        margin: 5px 0;
+        width: 100%;
+        font-size: 16px;
+    }
+
+    input {
+        width: 100%;
+        padding: 10px;
+        margin: 5px 0;
+        font-size: 16px;
+        box-sizing: border-box;
+    }
+
+    button:hover {
+        background-color: #3a2a22;
+    }
+
+    .hidden {
+        display: none;
+    }
+
+    .panel {
+        border: 1px solid #5a4632;
+        padding: 10px;
+        margin: 10px 0;
+    }
+
+    #players button {
+        width: 48%;
+        display: inline-block;
+    }
+
+    #inbox {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    .me {
+        text-align: right;
+        color: #f2e6c9;
+        margin: 5px;
+    }
+
+    .them {
+        text-align: left;
+        color: #cbb89a;
+        margin: 5px;
+    }
+
+    /* MOBILE FIXES */
+    @media (max-width: 600px) {
+
+        body {
+            padding: 5px;
+        }
+
+        h1 {
+            font-size: 18px;
+        }
+
+        #players button {
+            width: 100%;
+        }
+
+    }
+</style>
+
+</head>
+<body>
+
+<h1>Game of Thrones Board Messenger</h1>
+
+<!-- LOGIN -->
+<div id="loginScreen" class="panel">
+    <input id="nameInput" placeholder="Enter your name">
+    <button onclick="joinGame()">Enter</button>
+</div>
+
+<!-- LOBBY -->
+<div id="lobby" class="panel hidden">
+
+    <h3>Houses of the Realm</h3>
+    <div id="players"></div>
+
+</div>
+
+<!-- MESSAGE SCREEN -->
+<div id="messageScreen" class="panel hidden">
+
+    <h3>Send message to: <span id="selectedPlayer"></span></h3>
+
+    <button onclick="setMessage('Alliance?')">Alliance?</button>
+    <button onclick="setMessage('Truce?')">Truce?</button>
+    <button onclick="setMessage('Betrayal is near...')">Betrayal</button>
+
+    <br><br>
+
+    <input id="messageInput" placeholder="Write your decree">
+
+    <button onclick="sendMessage()">Send raven</button>
+    <button onclick="backToLobby()">Back</button>
+
+</div>
+
+<!-- INBOX -->
+<div class="panel">
+    <h3>Messages</h3>
+    <div id="inbox"></div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="client.js"></script>
+
+</body>
+
+</html>
