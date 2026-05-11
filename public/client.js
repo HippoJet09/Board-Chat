@@ -1,106 +1,134 @@
 const socket = io();
 
 let myName = "";
-let selectedPlayer = "";
+let roomId = "";
+let mySocketId = "";
 
+// LOGIN
+function createGame() {
 
-function show(id) {
-    document.getElementById(id).classList.remove("hidden");
+    myName = document.getElementById("nameInput").value;
+
+    socket.emit("createRoom", myName, (res) => {
+
+        roomId = res.roomId;
+
+        enterLobby();
+
+    });
+
 }
-
-function hide(id) {
-    document.getElementById(id).classList.add("hidden");
-}
-
 
 function joinGame() {
 
     myName = document.getElementById("nameInput").value;
+    roomId = document.getElementById("roomInput").value;
 
-    if (!myName) return;
+    socket.emit("joinRoom", { roomId, name: myName }, (res) => {
 
-    socket.emit("join", myName);
+        if (res.error) {
+            alert(res.error);
+            return;
+        }
 
-    hide("loginScreen");
-    show("lobby");
+        enterLobby();
+
+    });
 
 }
 
+// UI SWITCH
+function enterLobby() {
 
+    document.getElementById("login").classList.add("hidden");
+    document.getElementById("lobby").classList.remove("hidden");
+
+    document.getElementById("roomCode").innerText = roomId;
+
+}
+
+// PLAYERS UPDATE
 socket.on("players", (players) => {
 
     const div = document.getElementById("players");
     div.innerHTML = "";
 
-    players.forEach(p => {
+    const ids = Object.keys(players);
 
-        if (p === myName) return;
+    ids.forEach(id => {
+
+        const p = players[id];
 
         const btn = document.createElement("button");
-        btn.innerText = p;
+        btn.innerText = p.name;
 
-        btn.onclick = () => {
-            selectedPlayer = p;
+btn.onclick = () => {
 
-            document.getElementById("selectedPlayer").innerText = p;
+    const msg = prompt("Message to " + p.name);
 
-            hide("lobby");
-            show("messageScreen");
-        };
+    if (!msg) return;
+
+    socket.emit("privateMessage", {
+        to: id,
+        message: msg
+    });
+
+    addMessage("me", msg);
+
+};
 
         div.appendChild(btn);
 
     });
 
+    // host detection (first player = host button shown via server logic)
+    if (ids.length > 0 && players[socket.id] && players[socket.id].id === socket.id) {
+        document.getElementById("startBtn").classList.remove("hidden");
+    }
+
 });
 
-
-function setMessage(text) {
-    document.getElementById("messageInput").value = text;
+// START GAME
+function startGame() {
+    socket.emit("startGame");
 }
 
+// GAME STARTED
+socket.on("gameStarted", () => {
 
+    document.getElementById("lobby").classList.add("hidden");
+    document.getElementById("game").classList.remove("hidden");
+
+});
+
+// CHAT
 function sendMessage() {
 
-    const msg = document.getElementById("messageInput").value;
-
-    if (!msg || !selectedPlayer) return;
+    const msg = document.getElementById("msgInput").value;
 
     socket.emit("privateMessage", {
-        from: myName,
-        to: selectedPlayer,
+        to: socket.id, // placeholder (we will upgrade targeting next step)
         message: msg
     });
 
-    // show YOUR sent message instantly
-    const inbox = document.getElementById("inbox");
+    addMessage("me", msg);
 
-    inbox.innerHTML += `
-        <div class="me">
-            <b>You → ${selectedPlayer}:</b> ${msg}
-        </div>
-    `;
-
-    document.getElementById("messageInput").value = "";
 }
-
-
-function backToLobby() {
-    hide("messageScreen");
-    show("lobby");
-}
-
 
 socket.on("privateMessage", (data) => {
 
-    const inbox = document.getElementById("inbox");
-
-    const msgClass = data.from === myName ? "me" : "them";
-
-    inbox.innerHTML += `
-        <div class="${msgClass}">
-            <b>${data.from}:</b> ${data.message}
-        </div>
-    `;
+    addMessage("them", data.message);
 
 });
+
+function addMessage(type, text) {
+
+    const chat = document.getElementById("chat");
+
+    const div = document.createElement("div");
+    div.className = type;
+    div.innerText = text;
+
+    chat.appendChild(div);
+
+}
