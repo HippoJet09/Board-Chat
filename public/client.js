@@ -2,27 +2,36 @@ const socket = io();
 
 let myName = "";
 let roomId = "";
-let mySocketId = "";
+let players = {};
 
-// LOGIN
+let currentChat = null;
+
+// unread messages per player
+let unread = {};
+
+// ----------------------
+// CREATE / JOIN ROOM
+// ----------------------
+
 function createGame() {
 
     myName = document.getElementById("nameInput").value;
+    if (!myName) return alert("Enter your name");
 
-    socket.emit("createRoom", myName, (res) => {
+    socket.emit("createRoom", { name: myName }, (res) => {
 
         roomId = res.roomId;
-
         enterLobby();
 
     });
-
 }
 
 function joinGame() {
 
     myName = document.getElementById("nameInput").value;
     roomId = document.getElementById("roomInput").value;
+
+    if (!myName || !roomId) return alert("Enter name and room code");
 
     socket.emit("joinRoom", { roomId, name: myName }, (res) => {
 
@@ -34,10 +43,12 @@ function joinGame() {
         enterLobby();
 
     });
-
 }
 
-// UI SWITCH
+// ----------------------
+// SWITCH UI
+// ----------------------
+
 function enterLobby() {
 
     document.getElementById("login").classList.add("hidden");
@@ -47,79 +58,140 @@ function enterLobby() {
 
 }
 
+// ----------------------
 // PLAYERS UPDATE
-socket.on("players", (players) => {
+// ----------------------
+
+socket.on("players", (serverPlayers) => {
+
+    players = serverPlayers;
+    renderPlayers();
+
+});
+
+// ----------------------
+// RENDER PLAYER GRID
+// ----------------------
+
+function renderPlayers() {
 
     const div = document.getElementById("players");
     div.innerHTML = "";
 
-    const ids = Object.keys(players);
+    Object.keys(players).forEach(id => {
 
-    ids.forEach(id => {
+        if (id === socket.id) return;
 
-        const p = players[id];
+        const box = document.createElement("div");
 
-        const btn = document.createElement("button");
-        btn.innerText = p.name;
+        box.style = `
+            border: 2px solid #5a4632;
+            padding: 20px;
+            margin: 10px;
+            cursor: pointer;
+            position: relative;
+            display: inline-block;
+            width: 40%;
+            text-align: center;
+        `;
 
-btn.onclick = () => {
+        box.innerText = players[id];
 
-    const msg = prompt("Message to " + p.name);
+        // unread badge
+        if (unread[id]) {
 
-    if (!msg) return;
+            const badge = document.createElement("div");
 
-    socket.emit("privateMessage", {
-        to: id,
-        message: msg
+            badge.style = `
+                position: absolute;
+                top: 5px;
+                right: 5px;
+                background: red;
+                color: white;
+                border-radius: 50%;
+                width: 22px;
+                height: 22px;
+                font-size: 12px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            `;
+
+            badge.innerText = unread[id];
+
+            box.appendChild(badge);
+        }
+
+        box.onclick = () => openChat(id);
+
+        div.appendChild(box);
+
     });
 
-    addMessage("me", msg);
-
-};
-
-        div.appendChild(btn);
-
-    });
-
-    // host detection (first player = host button shown via server logic)
-    if (ids.length > 0 && players[socket.id] && players[socket.id].id === socket.id) {
-        document.getElementById("startBtn").classList.remove("hidden");
-    }
-
-});
-
-// START GAME
-function startGame() {
-    socket.emit("startGame");
 }
 
-// GAME STARTED
-socket.on("gameStarted", () => {
+// ----------------------
+// OPEN CHAT
+// ----------------------
 
-    document.getElementById("lobby").classList.add("hidden");
+function openChat(id) {
+
+    currentChat = id;
+
+    unread[id] = 0;
+
+    renderPlayers();
+
     document.getElementById("game").classList.remove("hidden");
 
-});
+    document.getElementById("chat").innerHTML = "";
 
-// CHAT
+}
+
+// ----------------------
+// SEND MESSAGE
+// ----------------------
+
 function sendMessage() {
 
     const msg = document.getElementById("msgInput").value;
 
+    if (!msg || !currentChat) return;
+
     socket.emit("privateMessage", {
-        to: socket.id, // placeholder (we will upgrade targeting next step)
+        to: currentChat,
         message: msg
     });
 
     addMessage("me", msg);
 
+    document.getElementById("msgInput").value = "";
+
 }
+
+// ----------------------
+// RECEIVE MESSAGE
+// ----------------------
 
 socket.on("privateMessage", (data) => {
 
-    addMessage("them", data.message);
+    const from = data.from;
+
+    // if not currently chatting with sender → unread
+    if (currentChat !== from) {
+
+        unread[from] = (unread[from] || 0) + 1;
+        renderPlayers();
+        return;
+    }
+
+    addMessage("them", data.fromName + ": " + data.message);
 
 });
+
+// ----------------------
+// CHAT DISPLAY
+// ----------------------
 
 function addMessage(type, text) {
 
