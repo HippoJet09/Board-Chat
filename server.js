@@ -10,70 +10,115 @@ app.use(express.static("public"));
 
 const rooms = {};
 
-function makeId() {
-    return Math.random().toString(36).substring(2, 7);
+function makeRoomCode() {
+    return Math.random().toString(36).substring(2, 8).toUpperCase();
 }
 
 io.on("connection", (socket) => {
 
-    socket.on("createRoom", ({ name }, cb) => {
+    socket.on("createRoom", ({ name }, callback) => {
 
-        const roomId = makeId();
+        const roomCode = makeRoomCode();
 
-        rooms[roomId] = {
+        rooms[roomCode] = {
             players: {}
         };
 
-        rooms[roomId].players[socket.id] = name;
+        rooms[roomCode].players[socket.id] = name;
 
-        socket.join(roomId);
-        socket.roomId = roomId;
+        socket.roomCode = roomCode;
 
-        cb({ roomId });
+        socket.join(roomCode);
 
-        io.to(roomId).emit("players", rooms[roomId].players);
+        callback({ roomCode });
+
+        io.to(roomCode).emit(
+            "players",
+            rooms[roomCode].players
+        );
+
     });
 
 
-    socket.on("joinRoom", ({ roomId, name }, cb) => {
+socket.on("joinRoom", ({ roomCode, name }, callback) => {
 
-        const room = rooms[roomId];
-        if (!room) return cb({ error: "Room not found" });
+    if (!rooms[roomCode]) {
 
-        room.players[socket.id] = name;
+        callback({
+            error: "Room does not exist"
+        });
 
-        socket.join(roomId);
-        socket.roomId = roomId;
+        return;
+    }
 
-        cb({ ok: true });
 
-        io.to(roomId).emit("players", room.players);
+
+    rooms[roomCode].players[
+        socket.id
+    ] = name;
+
+
+
+    socket.roomCode =
+        roomCode;
+
+
+
+    socket.join(
+        roomCode
+    );
+
+
+
+    callback({
+        success: true
     });
 
 
-socket.on("privateMessage", ({ to, message }) => {
 
-    const room = rooms[socket.roomId];
-    if (!room) return;
+    io.to(
+        roomCode
+    ).emit(
 
-    // send message to recipient
-    io.to(to).emit("privateMessage", {
-        from: socket.id,
-        fromName: room.players[socket.id],
-        message
-    });
+        "players",
+
+        rooms[
+            roomCode
+        ].players
+
+    );
 
 });
 
 
+    socket.on("privateMessage", ({ to, message }) => {
+
+        const room = rooms[socket.roomCode];
+
+        if (!room) return;
+
+        io.to(to).emit("privateMessage", {
+            from: socket.id,
+            fromName: room.players[socket.id],
+            message
+        });
+
+    });
+
+
     socket.on("disconnect", () => {
 
-        const room = rooms[socket.roomId];
+        const room = rooms[socket.roomCode];
+
         if (!room) return;
 
         delete room.players[socket.id];
 
-        io.to(socket.roomId).emit("players", room.players);
+        io.to(socket.roomCode).emit(
+            "players",
+            room.players
+        );
+
     });
 
 });
@@ -81,5 +126,5 @@ socket.on("privateMessage", ({ to, message }) => {
 const PORT = process.env.PORT || 3000;
 
 server.listen(PORT, () => {
-    console.log("Server running on port " + PORT);
+    console.log("Running");
 });

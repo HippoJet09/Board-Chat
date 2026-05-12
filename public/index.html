@@ -2,102 +2,145 @@
 <html>
 
 <head>
-    <title>Game Messenger</title>
 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Throne Messenger</title>
 
-    <style>
-        body {
-            background-color: #0b0b0f;
-            color: #d6c7a1;
-            font-family: Georgia, serif;
-            margin: 0;
-            padding: 10px;
-        }
-
-        button {
-            background-color: #2a1f1a;
-            color: #d6c7a1;
-            border: 1px solid #5a4632;
-            padding: 10px;
-            margin: 5px 0;
-            width: 100%;
-            font-size: 16px;
-        }
-
-        input {
-            width: 100%;
-            padding: 10px;
-            margin: 5px 0;
-            font-size: 16px;
-            box-sizing: border-box;
-        }
-
-        .panel {
-            border: 1px solid #5a4632;
-            padding: 10px;
-            margin: 10px 0;
-        }
-
-        .hidden {
-            display: none;
-        }
-
-        .me {
-            text-align: right;
-            margin: 5px;
-        }
-
-        .them {
-            text-align: left;
-            margin: 5px;
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 
 </head>
 
 <body>
 
-<h2>Game Messenger</h2>
 
-<!-- LOGIN -->
-<div id="login" class="panel">
-    <input id="nameInput" placeholder="Your name">
-    <button onclick="createGame()">Create Game</button>
+<!-- PAGE 1 -->
 
-    <input id="roomInput" placeholder="Room code">
-    <button onclick="joinGame()">Join Game</button>
-</div>
+<div id="namePage" class="screen">
 
-<!-- LOBBY -->
-<div id="lobby" class="panel hidden">
+    <h1>BOARD GAME</h1>
 
-    <h3>Room: <span id="roomCode"></span></h3>
+    <img src="castle.png" class="castle">
 
-    <h4>Players</h4>
-    <div id="players"></div>
+    <input
+        id="nameInput"
+        placeholder="Enter Your Name">
 
-    <button id="startBtn" onclick="startGame()" class="hidden">
-        Start Game (Host Only)
+    <button onclick="showRoomPage()">
+        PLAY
     </button>
 
 </div>
 
-<!-- GAME -->
-<div id="game" class="panel hidden">
 
-    <h3>Chat</h3>
 
-    <div id="chat"></div>
+<!-- PAGE 2 -->
 
-    <input id="msgInput" placeholder="Message">
-    <button onclick="sendMessage()">Send</button>
+<div id="roomPage"
+     class="screen hidden">
+
+    <h1>BOARD GAME</h1>
+
+    <button onclick="createRoom()">
+        CREATE ROOM
+    </button>
+
+
+    <div class="divider"></div>
+
+
+    <input
+        id="roomInput"
+        placeholder="Enter Room Code">
+
+    <button onclick="joinRoom()">
+        JOIN ROOM
+    </button>
 
 </div>
 
+
+
+<!-- PAGE 3 -->
+
+<div id="lobbyPage"
+     class="screen hidden">
+
+
+    <div id="roomCodeDisplay"></div>
+
+
+    <h1>LOBBY</h1>
+
+    <div id="players"></div>
+
+</div>
+
+
+
+<!-- PAGE 4 -->
+
+<div id="chatPage"
+     class="chatScreen hidden">
+
+
+    <div class="chatSidebar">
+
+        <button onclick="backToLobby()">
+            ← Lobby
+        </button>
+
+        <div id="sidebarPlayers"></div>
+
+    </div>
+
+
+
+    <div class="chatMain">
+
+        <div id="chatName"></div>
+
+
+        <div id="chatMessages"></div>
+
+
+
+        <div class="presetRow">
+
+            <button onclick="sendPreset('Alliance?')">
+                Alliance?
+            </button>
+
+            <button onclick="sendPreset('Peace?')">
+                Peace?
+            </button>
+
+            <button onclick="sendPreset('Attack?')">
+                Attack?
+            </button>
+
+        </div>
+
+
+
+        <div class="inputRow">
+
+            <input
+                id="messageInput"
+                placeholder="Type...">
+
+            <button onclick="sendMessage()">
+                SEND
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
 <script src="/socket.io/socket.io.js"></script>
+
 <script src="client.js"></script>
 
 </body>
-
 </html>
